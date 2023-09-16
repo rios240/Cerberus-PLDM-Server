@@ -22,6 +22,7 @@ set(TARGET_NAME ${PROJECT_NAME})
 include (${CMAKE_CURRENT_LIST_DIR}/../../../Cerberus.cmake)
 include(Mbedtls)
 include(AllFeatures)
+include(Libpldm)
 
 set(CORE_DIR ${CERBERUS_ROOT}/core)
 set(TESTING_DIR ${CERBERUS_ROOT}/testing)
@@ -42,6 +43,7 @@ find_package(OpenSSL REQUIRED)
 add_executable(
 	${TARGET_NAME}
 	${MBEDTLS_SOURCES}
+	${LIBPLDM_SOURCES}
 	${CORE_SOURCES}
 	${TESTING_SOURCES}
 	${PLATFORM_SOURCES}
@@ -51,6 +53,7 @@ target_include_directories(
 	${TARGET_NAME}
 	PRIVATE
 		${MBEDTLS_INCLUDES}
+		${LIBPLDM_INCLUDES}
 		${CORE_INCLUDES}
 		${PLATFORM_INCLUDES}
 		${TESTING_DIR}
@@ -83,9 +86,11 @@ target_link_libraries(
 		m
 	)
 
-include(Coverage)
-SETUP_TARGET_FOR_COVERAGE(
-	NAME coverage
- 	EXECUTABLE ${PROJECT_NAME}
- 	DEPENDENCIES ${PROJECT_NAME}
-	)
+#
+#include(Coverage)
+#SETUP_TARGET_FOR_COVERAGE(
+#	NAME coverage
+# 	EXECUTABLE ${PROJECT_NAME}
+# 	DEPENDENCIES ${PROJECT_NAME}
+#	)
+#

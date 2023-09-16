@@ -1,5 +1,6 @@
 .repo
-external
+external/
+build/
 tools/testing/output
 projects/*
 !projects/bare_metal
