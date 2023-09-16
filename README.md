@@ -1,3 +1,17 @@
+# Running Cerberus on CSU CS Machines:
+
+```bash 
+mkdir Project-Cerberus
+cd Project-Cerberus
+module load python/anaconda/py3.10-2023.03
+~/.local/bin/repo init -u https://github.com/rios240/cerberus-pldm-manifest -b main  
+~/.local/bin/repo sync
+cd Cerberus-PLDM-Server
+cd bin/
+./build.sh
+./cerberus-linux-unit-tests
+```
+
 # Project Cerberus
 
 Project Cerberus is designed to be a hardware root of trust (RoT) for server platforms.  It provides functionality 
