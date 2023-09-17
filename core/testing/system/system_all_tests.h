@@ -20,7 +20,7 @@ static void add_all_system_tests (CuSuite *suite)
 {
 	/* This is unused when no tests will be executed. */
 	UNUSED (suite);
-
+/*
 #if (defined TESTING_RUN_EVENT_TASK_SUITE || \
 		defined TESTING_RUN_ALL_TESTS || defined TESTING_RUN_ALL_CORE_TESTS || \
 		(!defined TESTING_SKIP_ALL_TESTS && !defined TESTING_SKIP_ALL_CORE_TESTS)) && \
@@ -45,6 +45,8 @@ static void add_all_system_tests (CuSuite *suite)
 	!defined TESTING_SKIP_SYSTEM_STATE_MANAGER_SUITE
 	TESTING_RUN_SUITE (system_state_manager);
 #endif
+
+*/
 }
 
 

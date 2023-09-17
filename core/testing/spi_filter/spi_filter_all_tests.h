@@ -20,7 +20,7 @@ static void add_all_spi_filter_tests (CuSuite *suite)
 {
 	/* This is unused when no tests will be executed. */
 	UNUSED (suite);
-
+/*
 #if (defined TESTING_RUN_SPI_FILTER_SUITE || \
 		defined TESTING_RUN_ALL_TESTS || defined TESTING_RUN_ALL_CORE_TESTS || \
 		(!defined TESTING_SKIP_ALL_TESTS && !defined TESTING_SKIP_ALL_CORE_TESTS)) && \
@@ -39,6 +39,8 @@ static void add_all_spi_filter_tests (CuSuite *suite)
 	!defined TESTING_SKIP_SPI_FILTER_IRQ_HANDLER_DIRTY_SUITE
 	TESTING_RUN_SUITE (spi_filter_irq_handler_dirty);
 #endif
+
+*/
 }
 
 

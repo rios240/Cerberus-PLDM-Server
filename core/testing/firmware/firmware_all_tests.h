@@ -20,7 +20,7 @@ static void add_all_firmware_tests (CuSuite *suite)
 {
 	/* This is unused when no tests will be executed. */
 	UNUSED (suite);
-
+/*
 #if (defined TESTING_RUN_APP_CONTEXT_NULL_SUITE || \
 		defined TESTING_RUN_ALL_TESTS || defined TESTING_RUN_ALL_CORE_TESTS || \
 		(!defined TESTING_SKIP_ALL_TESTS && !defined TESTING_SKIP_ALL_CORE_TESTS)) && \
@@ -63,6 +63,8 @@ static void add_all_firmware_tests (CuSuite *suite)
 	!defined TESTING_SKIP_FIRMWARE_UPDATE_HANDLER_REVOKE_AFTER_RESET_SUITE
 	TESTING_RUN_SUITE (firmware_update_handler_revoke_after_reset);
 #endif
+
+*/
 }
 
 

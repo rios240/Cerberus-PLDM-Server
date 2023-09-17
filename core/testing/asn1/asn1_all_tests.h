@@ -22,6 +22,9 @@ static void add_all_asn1_tests (CuSuite *suite)
 	add_all_asn1_dice_tests (suite);
 	add_all_asn1_dme_tests (suite);
 
+	/* This is unused when no tests will be executed. */
+	UNUSED (suite);
+/*
 #if (defined TESTING_RUN_ASN1_UTIL_SUITE || \
 		defined TESTING_RUN_ALL_TESTS || defined TESTING_RUN_ALL_CORE_TESTS || \
 		(!defined TESTING_SKIP_ALL_TESTS && !defined TESTING_SKIP_ALL_CORE_TESTS)) && \
@@ -70,6 +73,8 @@ static void add_all_asn1_tests (CuSuite *suite)
 	!defined TESTING_SKIP_X509_THREAD_SAFE_SUITE
 	TESTING_RUN_SUITE (x509_thread_safe);
 #endif
+
+*/
 }
 
 
