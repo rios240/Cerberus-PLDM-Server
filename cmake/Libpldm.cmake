@@ -15,4 +15,4 @@
 
 set(LIBPLDM_DIR ${CERBERUS_ROOT}/external/intelbmc-libpldm)
 file(GLOB LIBPLDM_SOURCES ${LIBPLDM_DIR}/*.c)
-set(LIBPLDM_INCLUDES ${LIBPLDM_DIR}/include)
+set(LIBPLDM_INCLUDES ${LIBPLDM_DIR})

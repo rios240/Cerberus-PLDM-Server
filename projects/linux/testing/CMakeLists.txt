@@ -43,21 +43,21 @@ find_package(OpenSSL REQUIRED)
 add_executable(
 	${TARGET_NAME}
 	${MBEDTLS_SOURCES}
-	${LIBPLDM_SOURCES}
 	${CORE_SOURCES}
 	${TESTING_SOURCES}
 	${PLATFORM_SOURCES}
+	${LIBPLDM_SOURCES}
 	)
 
 target_include_directories(
 	${TARGET_NAME}
 	PRIVATE
 		${MBEDTLS_INCLUDES}
-		${LIBPLDM_INCLUDES}
 		${CORE_INCLUDES}
 		${PLATFORM_INCLUDES}
 		${TESTING_DIR}
 		${PLATFORM_INCLUDES}/testing/config
+		${LIBPLDM_INCLUDES}
 	)
 
 target_compile_options(
