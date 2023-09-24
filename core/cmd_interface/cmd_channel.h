@@ -28,6 +28,8 @@ enum {
 	CMD_RX_ERROR,						/**< There was a channel error while receiving the packet data. */
 };
 
+
+
 /**
  * Information for a single command packet.
  */
@@ -122,7 +124,12 @@ enum {
 	CMD_CHANNEL_PKT_OVERFLOW = CMD_CHANNEL_ERROR (0x06),		/**< Packet overflow encountered. */
 	CMD_CHANNEL_INVALID_PKT_STATE = CMD_CHANNEL_ERROR (0x07),	/**< Packet state is not valid. */
 	CMD_CHANNEL_PKT_EXPIRED = CMD_CHANNEL_ERROR (0x08),			/**< The timeout on a received packet has expired. */
-	CMD_CHANNEL_INVALID_PKT_SIZE = CMD_CHANNEL_ERROR (0x09),	/**< The packet size is larger than the buffer. */
+	CMD_CHANNEL_INVALID_PKT_SIZE = CMD_CHANNEL_ERROR (0x09),	/**< The packet size is larger than the buffer. */										/**< Socket success. */
+	CMD_CHANNEL_SOC_INIT_FAILURE = CMD_CHANNEL_ERROR (0x0A),											/**< Socket initialization failure. */
+	CMD_CHANNEL_SOC_NET_ADDRESS_FAILURE = CMD_CHANNEL_ERROR (0x0B),									/**< Network address structure failure. */
+	CMD_CHANNEL_SOC_CONNECT_FAILURE = CMD_CHANNEL_ERROR (0x0C),										/**< Socket connections failure. */
+	CMD_CHANNEL_SOC_SEND_FAILURE = CMD_CHANNEL_ERROR (0x0D),											/**< Socket send failure. */
+	CMD_CHANNEL_SOC_RECEIVE_FAILURE = CMD_CHANNEL_ERROR (0x0E),										/**< Socket receive failure. */
 };
 
 
