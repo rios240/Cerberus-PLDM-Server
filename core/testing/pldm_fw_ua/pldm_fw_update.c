@@ -50,7 +50,7 @@ int send_packet(struct cmd_channel *channel, struct cmd_packet *packet) {
     }
 
 
-    if (send(sock, packet->data, sizeof (packet->data), 0) < 0) {
+    if (send(sock, packet->data, packet->pkt_size, 0) < 0) {
         close(sock);
         return CMD_CHANNEL_SOC_SEND_FAILURE;
     }
@@ -84,11 +84,14 @@ int receive_packet(struct cmd_channel *channel, struct cmd_packet *packet, int m
     }
 
 
-    if (recv(sock, packet->data, sizeof (packet->data), 0) < 0) {
+     ssize_t bytes = recv(sock, packet->data, CMD_MAX_PACKET_SIZE, 0);
+
+    if (bytes < 0) {
         close(sock);
         return CMD_CHANNEL_SOC_SEND_FAILURE;
     }
 
+    packet->pkt_size = bytes;
     
     close(sock);
 
