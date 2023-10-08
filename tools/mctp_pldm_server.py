@@ -33,7 +33,7 @@ try:
             try:
                 conn_socket.sendall(data)
                 
-                print("Forwarded data")
+                print(f"Forwarded data to {conn_address}")
             except Exception as e:
                 print("Error:", e)
             finally:
