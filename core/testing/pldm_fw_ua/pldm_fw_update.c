@@ -12,6 +12,7 @@
 #include "firmware_update.h"
 #include "mctp/mctp_interface.h"
 #include "platform_io.h"
+#include "crypto/checksum.h"
 
 
 TEST_SUITE_LABEL ("pldm_fw_update");
@@ -20,7 +21,7 @@ TEST_SUITE_LABEL ("pldm_fw_update");
  * Helper Functions
 */
 
-static void printBuf(uint8_t *buf, size_t size) {
+static void platform_printbuf(uint8_t *buf, size_t size) {
     for (size_t i = 0; i < size; i++) {
         platform_printf("%02x ", buf[i]);
     }
@@ -114,7 +115,7 @@ static void pldm_fw_update_test_request_update_req(CuTest *test)
 {
 
     int status;
-    uint8_t dest_addr = 0xff;
+    uint8_t dest_addr = 0xAA;
     struct mctp_interface mctp;
     mctp.msg_type = MCTP_BASE_PROTOCOL_MSG_TYPE_PLDM;
     struct cmd_interface cmd_cerberus;
@@ -144,23 +145,29 @@ static void pldm_fw_update_test_request_update_req(CuTest *test)
 
     TEST_START;
 
-    uint8_t pldmBuf[sizeof (struct pldm_msg_hdr) + sizeof (struct request_update_req) + compImgSetVerStrLen];
-    struct pldm_msg *pldmMsg = (struct pldm_msg*) pldmBuf;
+    uint8_t pldmBuf[sizeof (struct pldm_msg_hdr) + sizeof (struct request_update_req) + compImgSetVerStrLen + 1];
+    pldmBuf[0] = MCTP_BASE_PROTOCOL_MSG_TYPE_PLDM;
+    struct pldm_msg *pldmMsg = (struct pldm_msg*)&pldmBuf[1];
 
     status = encode_request_update_req(instanceId, pldmMsg, sizeof (struct request_update_req) + inCompImgSetVerStr.length, 
                                         &inReq, &inCompImgSetVerStr);
+    
 
-    struct request_update_req *outReq = (struct request_update_req *)(pldmBuf + sizeof (struct pldm_msg_hdr)); 
+    struct request_update_req *outReq = (struct request_update_req *)(&pldmBuf[1] + sizeof (struct pldm_msg_hdr)); 
 
     CuAssertIntEquals(test, 0, status);
     CuAssertIntEquals(test, outReq->max_transfer_size, inReq.max_transfer_size);
     CuAssertIntEquals(test, outReq->pkg_data_len, inReq.pkg_data_len);
     CuAssertIntEquals(test, outReq->comp_image_set_ver_str_len, inReq.comp_image_set_ver_str_len);
-    printBuf((uint8_t *)inCompImgSetVerStr.ptr, inCompImgSetVerStr.length);
-    printBuf(pldmMsg->payload + sizeof (struct request_update_req), inCompImgSetVerStr.length);
+    platform_printbuf((uint8_t *)inCompImgSetVerStr.ptr, inCompImgSetVerStr.length);
+    platform_printbuf(pldmMsg->payload, sizeof (struct request_update_req) + inCompImgSetVerStr.length);
+    platform_printbuf(pldmBuf, sizeof (pldmBuf));
 
-    status = device_manager_init(&device_mgr, 1, 1, DEVICE_MANAGER_PA_ROT_MODE, DEVICE_MANAGER_MASTER_BUS_ROLE, 
+    status = device_manager_init(&device_mgr, 2, 0, DEVICE_MANAGER_PA_ROT_MODE, DEVICE_MANAGER_MASTER_BUS_ROLE, 
                 1000, 1000, 1000, 1000, 1000, 1000, 5);
+    
+    device_mgr.entries->eid = 0xBB;
+    device_mgr.entries->smbus_addr = 0xDD;
 
     CuAssertIntEquals(test, 0, status);
 
@@ -169,9 +176,15 @@ static void pldm_fw_update_test_request_update_req(CuTest *test)
     CuAssertIntEquals(test, 0, status);
 
     uint8_t mctpBuf[MCTP_BASE_PROTOCOL_MAX_PACKET_LEN];
+    
 
-    status = mctp_interface_issue_request(&mctp, &channel, dest_addr, MCTP_BASE_PROTOCOL_NULL_EID, 
+    status = mctp_interface_issue_request(&mctp, &channel, dest_addr, 0xCC, 
                                             pldmBuf, sizeof (pldmBuf), mctpBuf, sizeof (mctpBuf), 0);
+
+
+    platform_printbuf(mctpBuf, sizeof (struct mctp_base_protocol_transport_header) 
+                        + sizeof (struct pldm_msg_hdr) + sizeof (struct request_update_req) + inCompImgSetVerStr.length + 2);
+
 
     CuAssertIntEquals(test, 0, status);
 
