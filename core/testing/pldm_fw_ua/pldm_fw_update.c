@@ -4,7 +4,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #include <unistd.h>
 #include "testing.h"
 #include "base.h"
@@ -25,7 +27,6 @@ static void platform_printbuf(uint8_t *buf, size_t size) {
     for (size_t i = 0; i < size; i++) {
         platform_printf("%02x ", buf[i]);
     }
-    platform_printf("\n");
 }
 
 int send_packet(struct cmd_channel *channel, struct cmd_packet *packet) {
@@ -63,6 +64,7 @@ int send_packet(struct cmd_channel *channel, struct cmd_packet *packet) {
 }
 
 int receive_packet(struct cmd_channel *channel, struct cmd_packet *packet, int ms_timeout) {
+    sleep(15);
     const int port = 5000;
     const char *address = "127.0.0.1";
 
@@ -84,8 +86,25 @@ int receive_packet(struct cmd_channel *channel, struct cmd_packet *packet, int m
         return CMD_CHANNEL_SOC_CONNECT_FAILURE;
     }
 
+    fd_set readfds;
+    struct timeval timeout;
+    timeout.tv_sec = ms_timeout / 1000; 
+    timeout.tv_usec = (ms_timeout % 1000) * 1000; 
 
-     ssize_t bytes = recv(sock, packet->data, CMD_MAX_PACKET_SIZE, 0);
+    FD_ZERO(&readfds);
+    FD_SET(sock, &readfds);
+
+    int selectResult = select(sock + 1, &readfds, NULL, NULL, &timeout);
+
+    if (selectResult == -1) {
+        close(sock);
+        return CMD_CHANNEL_SOC_SELECT_FAILURE;
+    } else if (selectResult == 0) {
+        close(sock);
+        return CMD_CHANNEL_SOC_TIMEOUT;
+    }
+
+    ssize_t bytes = recv(sock, packet->data, MCTP_BASE_PROTOCOL_MAX_PACKET_LEN, 0);
 
     if (bytes < 0) {
         close(sock);
@@ -93,12 +112,42 @@ int receive_packet(struct cmd_channel *channel, struct cmd_packet *packet, int m
     }
 
     packet->pkt_size = bytes;
+    packet->dest_addr = 0xDD;
+
+    platform_printf("\nServer received the following MCTP from the client: \n");
+    platform_printbuf(packet->data, packet->pkt_size);
+    platform_printf(NEWLINE);
     
     close(sock);
 
     return 0;
 }
 
+int process_request(struct cmd_interface *intf, struct cmd_interface_msg *request) {
+    return PLDM_ERROR;
+}
+
+int process_response(struct cmd_interface *intf, struct cmd_interface_msg *response) {
+    uint16_t fd_meta_data_len = 0;
+    uint8_t fd_pkg_data = 0;
+    uint8_t completion_code = 0;
+    int status;
+
+    struct pldm_msg *respMsg = (struct pldm_msg *)&response->data[1];
+
+    platform_printf("After processing the MCTP message and extracting the payload, the server enters the process_response phase.\n");
+    platform_printf("Decoding the payload/PLDM gives the following fields.\n\n");
+    status = decode_request_update_resp(respMsg, sizeof (struct pldm_request_update_resp), 
+                                &completion_code, &fd_meta_data_len, &fd_pkg_data);
+    
+    platform_printf("Completion Code is: %d.\n", completion_code);
+    platform_printf("FDWillSendGetPackageDataCommand is: %d.\n", fd_pkg_data);
+    platform_printf("FirmwareDeviceMetaDataLength is: %d.\n\n", fd_meta_data_len);
+
+    response->length = 0;
+
+    return status;
+}
 
 /**
  * Test Functions
@@ -111,21 +160,27 @@ static void pldm_fw_update_test_place_holder(CuTest *test)
     CuAssertIntEquals(test, 0, 0);
 }
 
-static void pldm_fw_update_test_request_update_req(CuTest *test)
+static void pldm_fw_update_test_request_update_req_good_response(CuTest *test)
 {
 
     int status;
-    uint8_t dest_addr = 0xAA;
     struct mctp_interface mctp;
     mctp.msg_type = MCTP_BASE_PROTOCOL_MSG_TYPE_PLDM;
+
     struct cmd_interface cmd_cerberus;
     struct cmd_interface cmd_mctp;
+    cmd_mctp.process_request = process_request;
+    cmd_mctp.process_response = process_response;
     struct cmd_interface cmd_spdm;
+
     struct device_manager device_mgr;
+
     struct cmd_channel channel;
     channel.send_packet = send_packet;
     channel.receive_packet = receive_packet;
     channel.id = 1;
+
+    uint8_t dest_addr = 0xAA;
 
     uint8_t instanceId = 1;
     const char *compImgSetVerStrArr = "0penBmcv1.0";
@@ -149,42 +204,52 @@ static void pldm_fw_update_test_request_update_req(CuTest *test)
     pldmBuf[0] = MCTP_BASE_PROTOCOL_MSG_TYPE_PLDM;
     struct pldm_msg *pldmMsg = (struct pldm_msg*)&pldmBuf[1];
 
+    platform_printf("\nServer encodes the RequestUpdate PLDM request.\n");
     status = encode_request_update_req(instanceId, pldmMsg, sizeof (struct request_update_req) + inCompImgSetVerStr.length, 
                                         &inReq, &inCompImgSetVerStr);
-    
-
-    struct request_update_req *outReq = (struct request_update_req *)(&pldmBuf[1] + sizeof (struct pldm_msg_hdr)); 
-
     CuAssertIntEquals(test, 0, status);
-    CuAssertIntEquals(test, outReq->max_transfer_size, inReq.max_transfer_size);
-    CuAssertIntEquals(test, outReq->pkg_data_len, inReq.pkg_data_len);
-    CuAssertIntEquals(test, outReq->comp_image_set_ver_str_len, inReq.comp_image_set_ver_str_len);
-    platform_printbuf((uint8_t *)inCompImgSetVerStr.ptr, inCompImgSetVerStr.length);
-    platform_printbuf(pldmMsg->payload, sizeof (struct request_update_req) + inCompImgSetVerStr.length);
-    platform_printbuf(pldmBuf, sizeof (pldmBuf));
+
+    platform_printf("The PLDM header->{");
+    platform_printbuf(&pldmBuf[1], sizeof (struct pldm_msg_hdr));
+    platform_printf("} and PLDM payload->{");
+    platform_printbuf(&pldmBuf[1 + sizeof (struct pldm_msg_hdr)], sizeof (struct request_update_req) + inCompImgSetVerStr.length);
+    platform_printf("}.\n\n");
+
+    platform_printf("The PLDM payload fields are: \nMaximumTransferSize: %d, \nNumberOfComponents: %d," 
+            "\nMaximumOutstandingTransferRequests: %d, \nPackageDataLength: %d," 
+            "\nComponentImageSetVersionStringType: %d, \nComponentImageSetVersionStringLength: %d,"
+            "\nComponentImageSetVersionString: %s\n\n",
+                inReq.max_transfer_size, inReq.no_of_comp, 
+                inReq.max_outstand_transfer_req, inReq.pkg_data_len, 
+                inReq.comp_image_set_ver_str_type, inCompImgSetVerStr.length, inCompImgSetVerStr.ptr);
 
     status = device_manager_init(&device_mgr, 2, 0, DEVICE_MANAGER_PA_ROT_MODE, DEVICE_MANAGER_MASTER_BUS_ROLE, 
                 1000, 1000, 1000, 1000, 1000, 1000, 5);
-    
+    CuAssertIntEquals(test, 0, status);
     device_mgr.entries->eid = 0xBB;
     device_mgr.entries->smbus_addr = 0xDD;
 
-    CuAssertIntEquals(test, 0, status);
-
+    platform_printf("Server initializes the MCTP interface.\n");
     status = mctp_interface_init(&mctp, &cmd_cerberus, &cmd_mctp, &cmd_spdm, &device_mgr);
-
     CuAssertIntEquals(test, 0, status);
 
     uint8_t mctpBuf[MCTP_BASE_PROTOCOL_MAX_PACKET_LEN];
     
-
+    platform_printf("The server then generates the PLDM over MCTP binding message to send to the client.\n");
     status = mctp_interface_issue_request(&mctp, &channel, dest_addr, 0xCC, 
                                             pldmBuf, sizeof (pldmBuf), mctpBuf, sizeof (mctpBuf), 0);
+    CuAssertIntEquals(test, 0, status);
 
+    platform_printf("The MCTP message: MCTP header->{");
+    platform_printbuf(mctpBuf, sizeof(struct mctp_base_protocol_transport_header));
+    platform_printf("}, MCTP payload/PLDM message->{");
+    platform_printbuf(&mctpBuf[sizeof(struct mctp_base_protocol_transport_header)], sizeof (struct pldm_msg_hdr) + sizeof (struct request_update_req) + compImgSetVerStrLen + 1);
+    platform_printf("}, and Checksum->{");
+    platform_printbuf(&mctpBuf[sizeof(struct mctp_base_protocol_transport_header) + sizeof (struct pldm_msg_hdr) + sizeof (struct request_update_req) + compImgSetVerStrLen + 1], 1);
+    platform_printf("}.\n\n");
 
-    platform_printbuf(mctpBuf, sizeof (struct mctp_base_protocol_transport_header) 
-                        + sizeof (struct pldm_msg_hdr) + sizeof (struct request_update_req) + inCompImgSetVerStr.length + 2);
-
+    platform_printf("Server then waits for a response from the client.\n");
+    status = cmd_channel_receive_and_process(&channel, &mctp, 30000);
 
     CuAssertIntEquals(test, 0, status);
 
@@ -193,6 +258,6 @@ static void pldm_fw_update_test_request_update_req(CuTest *test)
 TEST_SUITE_START (pldm_fw_update);
 
 TEST (pldm_fw_update_test_place_holder);
-TEST (pldm_fw_update_test_request_update_req);
+TEST (pldm_fw_update_test_request_update_req_good_response);
 
 TEST_SUITE_END;

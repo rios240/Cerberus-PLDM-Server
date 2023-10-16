@@ -9,7 +9,7 @@
 #include "cmd_logging.h"
 #include "common/common_math.h"
 #include "mctp/mctp_interface.h"
-
+#include "platform_io.h"
 
 /**
  * Initialize the base channel components.
