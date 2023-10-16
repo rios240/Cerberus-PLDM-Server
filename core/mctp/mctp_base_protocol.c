@@ -94,6 +94,15 @@ int mctp_base_protocol_interpret (uint8_t *buf, size_t buf_len, uint8_t dest_add
 		packet_len = header->byte_count + MCTP_BASE_PROTOCOL_SMBUS_OVERHEAD;
 		*payload_len = mctp_protocol_payload_len (packet_len);
 	}
+	else if (MCTP_BASE_PROTOCOL_IS_PLDM_MSG (*msg_type)) {
+		if ((header->byte_count + MCTP_BASE_PROTOCOL_SMBUS_OVERHEAD) <=
+				(uint8_t) MCTP_BASE_PROTOCOL_PACKET_OVERHEAD) {
+			return MCTP_BASE_PROTOCOL_MSG_TOO_SHORT;
+		}
+		packet_len = header->byte_count + MCTP_BASE_PROTOCOL_SMBUS_OVERHEAD;
+		*payload_len = mctp_protocol_payload_len (packet_len);
+
+	}
 	else {
 		return MCTP_BASE_PROTOCOL_UNSUPPORTED_MSG;
 	}

@@ -14,6 +14,7 @@
 #include "mctp_logging.h"
 #include "mctp_base_protocol.h"
 #include "mctp_interface.h"
+#include "platform_io.h"
 
 
 /**
@@ -392,6 +393,15 @@ int mctp_interface_process_packet (struct mctp_interface *mctp, struct cmd_packe
 			else if (MCTP_BASE_PROTOCOL_IS_VENDOR_MSG (mctp->msg_type)) {
 				status = mctp->cmd_cerberus->process_response (mctp->cmd_cerberus,
 					&mctp->req_buffer);
+			}
+			else if (MCTP_BASE_PROTOCOL_IS_PLDM_MSG (mctp->msg_type)) {
+				status = mctp->cmd_mctp->process_response (mctp->cmd_mctp, &mctp->req_buffer);
+				if (status != 0) {
+					debug_log_create_entry (DEBUG_LOG_SEVERITY_ERROR, DEBUG_LOG_COMPONENT_MCTP,
+						MCTP_LOGGING_MCTP_PLDM_RSP_FAIL, status, mctp->channel_id);
+
+					return status;
+				}
 			}
 			else if (MCTP_BASE_PROTOCOL_IS_SPDM_MSG (mctp->msg_type)) {
 				if (mctp->cmd_spdm) {
