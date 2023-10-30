@@ -140,9 +140,9 @@ int process_response(struct cmd_interface *intf, struct cmd_interface_msg *respo
     status = decode_request_update_resp(respMsg, sizeof (struct pldm_request_update_resp), 
                                 &completion_code, &fd_meta_data_len, &fd_pkg_data);
     
-    platform_printf("Completion Code is: %d.\n", completion_code);
-    platform_printf("FDWillSendGetPackageDataCommand is: %d.\n", fd_pkg_data);
-    platform_printf("FirmwareDeviceMetaDataLength is: %d.\n\n", fd_meta_data_len);
+    platform_printf("Completion Code is: %d,\n", completion_code);
+    platform_printf("FDWillSendGetPackageDataCommand is: %d,\n", fd_pkg_data);
+    platform_printf("FirmwareDeviceMetaDataLength is: %d\n\n", fd_meta_data_len);
 
     response->length = 0;
 
