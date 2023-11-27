@@ -2,7 +2,7 @@ import socket
 import binascii
 
 HOST = '127.0.0.1'
-PORT = 5000
+PORT = 12354
 
 channel_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -22,7 +22,7 @@ try:
             if not data:
                 break
         
-            hex_data = binascii.hexlify(data).decode('utf-8')
+            hex_data = ' '.join(['{:02x}'.format(byte) for byte in data])
 
             print("Received data:", hex_data)
             

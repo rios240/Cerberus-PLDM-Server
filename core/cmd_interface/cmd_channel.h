@@ -132,6 +132,7 @@ enum {
 	CMD_CHANNEL_SOC_RECEIVE_FAILURE = CMD_CHANNEL_ERROR (0x0E),				/**< Socket receive failure. */
 	CMD_CHANNEL_SOC_SELECT_FAILURE = CMD_CHANNEL_ERROR (0x10),				/**< Socket select failure. */
 	CMD_CHANNEL_SOC_TIMEOUT = CMD_CHANNEL_ERROR(0x11),						/**< Socket timeout error. */
+	CMD_CHANNEL_SOC_BIND_FAILURE = CMD_CHANNEL_ERROR(0x12),					/**<Socket bind error. */
 };
 
 

@@ -4,9 +4,10 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include "pldm_firmware_cmd_channel.h"
+#include "platform_io.h"
 
 int send_packet(struct cmd_channel *channel, struct cmd_packet *packet) {
-    const int port = 5000;
+    const int server_port = 12354;
     const char *address = "127.0.0.1";
 
     int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -16,7 +17,7 @@ int send_packet(struct cmd_channel *channel, struct cmd_packet *packet) {
 
     struct sockaddr_in server;
     server.sin_family = AF_INET;
-    server.sin_port = htons(port);
+    server.sin_port = htons(server_port);
     if (inet_pton(AF_INET, address, &(server.sin_addr)) <= 0) {
         close(sock);
         return CMD_CHANNEL_SOC_NET_ADDRESS_FAILURE;
@@ -26,7 +27,6 @@ int send_packet(struct cmd_channel *channel, struct cmd_packet *packet) {
         close(sock);
         return CMD_CHANNEL_SOC_CONNECT_FAILURE;
     }
-
 
     if (send(sock, packet->data, packet->pkt_size, 0) < 0) {
         close(sock);
@@ -39,7 +39,7 @@ int send_packet(struct cmd_channel *channel, struct cmd_packet *packet) {
 }
 
 int receive_packet(struct cmd_channel *channel, struct cmd_packet *packet, int ms_timeout) {
-    const int port = 5000;
+    const int server_port = 12354;
     const char *address = "127.0.0.1";
 
     int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -49,7 +49,7 @@ int receive_packet(struct cmd_channel *channel, struct cmd_packet *packet, int m
 
     struct sockaddr_in server;
     server.sin_family = AF_INET;
-    server.sin_port = htons(port);
+    server.sin_port = htons(server_port);
     if (inet_pton(AF_INET, address, &(server.sin_addr)) <= 0) {
         close(sock);
         return CMD_CHANNEL_SOC_NET_ADDRESS_FAILURE;
@@ -60,34 +60,14 @@ int receive_packet(struct cmd_channel *channel, struct cmd_packet *packet, int m
         return CMD_CHANNEL_SOC_CONNECT_FAILURE;
     }
 
-    fd_set readfds;
-    struct timeval timeout;
-    timeout.tv_sec = ms_timeout / 1000; 
-    timeout.tv_usec = (ms_timeout % 1000) * 1000; 
-
-    FD_ZERO(&readfds);
-    FD_SET(sock, &readfds);
-
-    int selectResult = select(sock + 1, &readfds, NULL, NULL, &timeout);
-
-    if (selectResult == -1) {
-        close(sock);
-        return CMD_CHANNEL_SOC_SELECT_FAILURE;
-    } else if (selectResult == 0) {
-        close(sock);
-        return CMD_CHANNEL_SOC_TIMEOUT;
-    }
-
-
     ssize_t bytes = recv(sock, packet->data, MCTP_BASE_PROTOCOL_MAX_PACKET_LEN, 0);
-
     if (bytes < 0) {
         close(sock);
         return CMD_CHANNEL_SOC_SEND_FAILURE;
     }
 
     packet->pkt_size = bytes;
-    packet->dest_addr = 0xAA;
+    packet->dest_addr = 0x4C;
 
     close(sock);
 

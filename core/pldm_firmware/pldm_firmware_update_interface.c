@@ -9,13 +9,11 @@
 
 
 
-int pldm_firmware_update_init(struct mctp_interface *mctp, struct cmd_channel *channel, struct device_manager *device_mgr,
-                                uint8_t device_eid, uint8_t device_smbus_addr) 
+int pldm_firmware_update_init(struct mctp_interface *mctp, struct cmd_channel *channel, struct cmd_interface *cmd_mctp,
+                                struct cmd_interface *cmd_spdm, struct cmd_interface *cmd_cerberus,
+                                struct device_manager *device_mgr, uint8_t device_eid, uint8_t device_smbus_addr)
 {
     int status;
-    struct cmd_interface cmd_cerberus;
-    struct cmd_interface cmd_mctp;
-    struct cmd_interface cmd_spdm;
 
     channel->send_packet = send_packet;
     channel->receive_packet = receive_packet;
@@ -28,10 +26,12 @@ int pldm_firmware_update_init(struct mctp_interface *mctp, struct cmd_channel *c
         return status;
     }
 
+    cmd_cerberus->generate_error_packet = generate_error_packet;
+
     device_mgr->entries->eid = device_eid;
     device_mgr->entries->smbus_addr = device_smbus_addr;
 
-    status = mctp_interface_init(mctp, &cmd_cerberus, &cmd_mctp, &cmd_spdm, device_mgr);
+    status = mctp_interface_init(mctp, cmd_cerberus, cmd_mctp, cmd_spdm, device_mgr);
 
     return status;
 
@@ -58,6 +58,8 @@ int pldm_firmware_update_run(struct mctp_interface *mctp, struct cmd_channel *ch
     if (status != 0) {
         return status;
     }
+
+    sleep(15);
 
     mctp->cmd_mctp->process_response = request_update_resp;
 

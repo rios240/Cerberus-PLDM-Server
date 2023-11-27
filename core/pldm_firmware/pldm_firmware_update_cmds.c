@@ -7,6 +7,11 @@
 #include "utils.h"
 #include "firmware_update.h"
 
+int generate_error_packet(struct cmd_interface *intf, struct cmd_interface_msg *request,
+		uint8_t error_code, uint32_t error_data, uint8_t cmd_set) 
+{
+    return 0;
+}
 
 int request_update_req(uint8_t *pldm_buf, const char *compImgSetVerStrArr, uint8_t compImgSetVerStrLen) {
     pldm_buf[0] = MCTP_BASE_PROTOCOL_MSG_TYPE_PLDM;
