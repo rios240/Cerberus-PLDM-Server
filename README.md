@@ -1,4 +1,4 @@
-# Running Cerberus on CSU CS Machines:
+# Building Cerberus on CSU CS Machines:
 
 ```bash 
 mkdir Cerberus-PLDM
@@ -9,7 +9,6 @@ cd Cerberus-PLDM-Server
 mkdir build && cd build
 cmake -G Ninja ../projects/linux/testing/
 ninja
-./cerberus-linux-unit-tests
 ```
 
 # Project Cerberus
