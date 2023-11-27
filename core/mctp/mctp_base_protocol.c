@@ -7,6 +7,7 @@
 #include <string.h>
 #include "crypto/checksum.h"
 #include "mctp_base_protocol.h"
+#include "platform_io.h"
 
 
 /**

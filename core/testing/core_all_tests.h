@@ -26,7 +26,7 @@
 #include "state_manager/state_manager_all_tests.h"
 #include "system/system_all_tests.h"
 #include "tpm/tpm_all_tests.h"
-#include "pldm_fw_ua/pldm_fw_ua_all_tests.h"
+#include "pldm_firmware/pldm_firmware_all_tests.h"
 
 
 /**
@@ -38,6 +38,7 @@
  */
 void add_all_core_tests (CuSuite *suite)
 {
+	add_all_pldm_firmware_tests (suite);
 	add_all_asn1_tests (suite);
 	add_all_attestation_tests (suite);
 	add_all_cmd_interface_tests (suite);
@@ -58,7 +59,6 @@ void add_all_core_tests (CuSuite *suite)
 	add_all_state_manager_tests (suite);
 	add_all_system_tests (suite);
 	add_all_tpm_tests (suite);
-	add_all_pldm_fw_ua_tests (suite);
 
 	/* Test coverage for platform abstractions. */
 #if (defined TESTING_RUN_PLATFORM_CLOCK_SUITE || \
