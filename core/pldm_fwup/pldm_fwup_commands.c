@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "pldm_fwup_commands.h"
 #include "firmware_update.h"
+#include "pldm_fwup_interface.h"
 
 
 int issue_query_device_identifiers(uint8_t *request, size_t *payload_length)
@@ -26,6 +27,8 @@ int issue_query_device_identifiers(uint8_t *request, size_t *payload_length)
 
 int process_query_device_identifiers(struct cmd_interface *intf, struct cmd_interface_msg *response)
 {
+    struct pldm_fwup_interface *fwup = get_fwup_interface();
+
     struct pldm_msg *respMsg = (struct pldm_msg *)(&response->data[1]);
     
     uint8_t completion_code;
@@ -39,6 +42,7 @@ int process_query_device_identifiers(struct cmd_interface *intf, struct cmd_inte
     
     response->length = 0;
 
+    fwup->completion_code = completion_code;
     return status;
 }
 
@@ -60,6 +64,8 @@ int issue_get_firmware_parameters(uint8_t *request, size_t *payload_length)
 
 int process_get_firmware_parameters(struct cmd_interface *intf, struct cmd_interface_msg *response)
 {
+    struct pldm_fwup_interface *fwup = get_fwup_interface();
+
     struct pldm_msg *respMsg = (struct pldm_msg *)(&response->data[1]);
 
     struct get_firmware_parameters_resp resp_data;
@@ -84,6 +90,7 @@ int process_get_firmware_parameters(struct cmd_interface *intf, struct cmd_inter
     
     response->length = 0;
 
+    fwup->completion_code = resp_data.completion_code;
     return status;
 
 
@@ -124,6 +131,7 @@ int issue_request_update(uint8_t *request, size_t *payload_length)
 
 int process_request_update(struct cmd_interface *intf, struct cmd_interface_msg *response)
 {
+    struct pldm_fwup_interface *fwup = get_fwup_interface();
     struct pldm_msg *respMsg = (struct pldm_msg *)(&response->data[1]);
 
     uint8_t completion_code;
@@ -135,9 +143,46 @@ int process_request_update(struct cmd_interface *intf, struct cmd_interface_msg 
 
     response->length = 0;
 
+    fwup->completion_code = completion_code;
     return status;
 
 }
+
+/*
+int process_and_generate_get_package_data(struct cmd_interface *intf, struct cmd_interface_msg *request)
+{
+    struct pldm_fwup_interface *fwup = get_fwup_interface();
+
+    struct pldm_msg *reqMsg = (struct pldm_msg *)(&request->data[1]);
+    const size_t payload_length = request->length - sizeof (struct get_fd_data_req) - 1;
+
+    uint32_t data_transfer_handle;
+    uint8_t transfer_operation_flag;
+
+    int status = decode_get_pacakge_data_req(reqMsg, payload_length, &data_transfer_handle, &transfer_operation_flag);
+
+    struct get_fd_data_resp resp_data;
+
+    return status;
+    
+
+}
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 int issue_pass_component_table(uint8_t *request, size_t *payload_length)
 {

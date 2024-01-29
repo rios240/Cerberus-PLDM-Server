@@ -92,8 +92,8 @@ int receive_packet(struct cmd_channel *channel, struct cmd_packet *packet, int m
     packet->pkt_size = valread;
     packet->dest_addr = 0xDE;
 
-    printf("Received: \n");
-    print_packet_data(packet->data, packet->pkt_size);
+    //printf("Received: \n");
+    //print_packet_data(packet->data, packet->pkt_size);
 
     close(new_socket);
     close(server_fd);
@@ -142,8 +142,8 @@ int send_packet(struct cmd_channel *channel, struct cmd_packet *packet) {
     }
 
     send(sock, packet->data, packet->pkt_size, 0);
-    printf("Sent: \n");
-    print_packet_data(packet->data, packet->pkt_size);
+    //printf("Sent: \n");
+    //print_packet_data(packet->data, packet->pkt_size);
     close(sock);
 
     return 0;

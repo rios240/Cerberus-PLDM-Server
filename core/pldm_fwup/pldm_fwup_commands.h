@@ -17,6 +17,8 @@ int issue_request_update(uint8_t *request, size_t *payload_length);
 
 int process_request_update(struct cmd_interface *intf, struct cmd_interface_msg *response);
 
+int process_and_generate_get_package_data(struct cmd_interface *intf, struct cmd_interface_msg *request);
+
 int issue_pass_component_table(uint8_t *request, size_t *payload_length);
 
 int process_pass_component_table(struct cmd_interface *intf, struct cmd_interface_msg *response);
