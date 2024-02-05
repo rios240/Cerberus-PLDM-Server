@@ -4,12 +4,18 @@
 #include "testing.h"
 #include "platform_io.h"
 #include "pldm_fwup/pldm_fwup_interface.h"
-#include "pldm_fwup/pldm_fwup_mctp.h"
 #include "pldm_fwup/pldm_fwup_commands.h"
 #include "firmware_update.h"
 
 
 TEST_SUITE_LABEL ("pldm_fwup_test_fd_learn_components");
+
+void print_bytes(uint8_t *bytes, size_t length) {
+    for (size_t i = 0; i < length; i++) {
+        printf("%02X ", bytes[i]);
+    }
+    printf("\n");
+}
 
 
 static void pldm_fwup_test_fd_learn_components_good_responses (CuTest *test) {
@@ -27,17 +33,24 @@ static void pldm_fwup_test_fd_learn_components_good_responses (CuTest *test) {
     int status = initialize_firmware_update(&mctp, &cmd_channel, &cmd_mctp, &cmd_spdm, &cmd_cerberus, &device_mgr, fwup);
     CuAssertIntEquals(test, 0, status);
 
-    status = generate_and_send_pldm_over_mctp(&mctp, &cmd_channel, issue_query_device_identifiers);
+    status = generate_and_send_pldm_over_mctp(&mctp, &cmd_channel, request_query_device_identifiers);
     CuAssertIntEquals(test, 0, status);
     status = process_and_receive_pldm_over_mctp(&mctp, &cmd_channel, process_query_device_identifiers);
     CuAssertIntEquals(test, 0, status);
     CuAssertIntEquals(test, PLDM_SUCCESS, fwup->completion_code);
 
-    status = generate_and_send_pldm_over_mctp(&mctp, &cmd_channel, issue_get_firmware_parameters);
+    status = generate_and_send_pldm_over_mctp(&mctp, &cmd_channel, request_get_firmware_parameters);
     CuAssertIntEquals(test, 0, status);
     status = process_and_receive_pldm_over_mctp(&mctp, &cmd_channel, process_get_firmware_parameters);
     CuAssertIntEquals(test, 0, status);
     CuAssertIntEquals(test, PLDM_SUCCESS, fwup->completion_code);
+
+    print_bytes(fwup->package_data, (size_t)fwup->package_data_size);
+    
+    do {
+        status = process_and_receive_pldm_over_mctp(&mctp, &cmd_channel, process_and_respond_get_package_data);
+        CuAssertIntEquals(test, 0, status);
+    } while (fwup->multipart_transfer.transfer_in_progress != 0);
 
     clean_up_and_reset_firmware_update(&mctp, fwup);
 }

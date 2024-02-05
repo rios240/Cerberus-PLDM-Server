@@ -8,7 +8,7 @@
 #include "pldm_fwup_interface.h"
 
 
-int issue_query_device_identifiers(uint8_t *request, size_t *payload_length)
+int request_query_device_identifiers(uint8_t *request, size_t *payload_length)
 {
 
     uint8_t instance_id = 1;
@@ -47,7 +47,7 @@ int process_query_device_identifiers(struct cmd_interface *intf, struct cmd_inte
 }
 
 
-int issue_get_firmware_parameters(uint8_t *request, size_t *payload_length)
+int request_get_firmware_parameters(uint8_t *request, size_t *payload_length)
 {
     uint8_t instance_id = 1;
 
@@ -97,7 +97,7 @@ int process_get_firmware_parameters(struct cmd_interface *intf, struct cmd_inter
 }
 
 
-int issue_request_update(uint8_t *request, size_t *payload_length)
+int request_update(uint8_t *request, size_t *payload_length)
 {
     uint8_t instance_id = 1;
     const char* comp_image_set_ver_str_arr = "cerberus_v2.0";
@@ -148,39 +148,71 @@ int process_request_update(struct cmd_interface *intf, struct cmd_interface_msg 
 
 }
 
-/*
-int process_and_generate_get_package_data(struct cmd_interface *intf, struct cmd_interface_msg *request)
+
+int process_and_respond_get_package_data(struct cmd_interface *intf, struct cmd_interface_msg *request)
 {
     struct pldm_fwup_interface *fwup = get_fwup_interface();
+    static uint32_t portion_size = 10;
 
     struct pldm_msg *reqMsg = (struct pldm_msg *)(&request->data[1]);
-    const size_t payload_length = request->length - sizeof (struct get_fd_data_req) - 1;
+    size_t payload_length = request->length - sizeof (struct get_fd_data_req) - 1;
 
     uint32_t data_transfer_handle;
     uint8_t transfer_operation_flag;
 
-    int status = decode_get_pacakge_data_req(reqMsg, payload_length, &data_transfer_handle, &transfer_operation_flag);
+    int status = decode_get_pacakge_data_req(reqMsg, (const size_t) payload_length, &data_transfer_handle, &transfer_operation_flag);
 
-    struct get_fd_data_resp resp_data;
+    struct get_fd_data_resp resp_data = { 0 };
+    resp_data.completion_code = PLDM_SUCCESS;
+    struct variable_field portion_of_pkg_data;
+    portion_of_pkg_data.length = portion_size;
+
+    if ((transfer_operation_flag == PLDM_GET_FIRSTPART && fwup->multipart_transfer.transfer_in_progress == 1) ||
+        (transfer_operation_flag == PLDM_GET_NEXTPART && fwup->multipart_transfer.transfer_in_progress == 0)) {
+        resp_data.completion_code = INVALID_TRANSFER_OPERATION_FLAG;
+    }
+    if (transfer_operation_flag != PLDM_GET_FIRSTPART && data_transfer_handle != fwup->multipart_transfer.last_transfer_handle) {
+        resp_data.completion_code = INVALID_DATA_TRANSFER_HANDLE;
+    }
+    if (fwup->package_data_size == 0) {
+        resp_data.completion_code = NO_PACKAGE_DATA;
+    }
+
+    if (transfer_operation_flag == PLDM_GET_FIRSTPART && fwup->multipart_transfer.transfer_in_progress == 0) {
+        if (fwup->package_data_size <= portion_size) {
+            resp_data.transfer_flag = PLDM_START_AND_END;
+        } else {
+            resp_data.transfer_flag = PLDM_START;
+            fwup->multipart_transfer.transfer_in_progress = 1;
+        }
+    }
+    if (transfer_operation_flag == PLDM_GET_NEXTPART && fwup->multipart_transfer.transfer_in_progress == 1) {
+        resp_data.transfer_flag = PLDM_MIDDLE;
+    }
+    if (fwup->multipart_transfer.last_transfer_handle + portion_size == fwup->package_data_size) {
+        resp_data.transfer_flag = PLDM_END;
+        fwup->multipart_transfer.transfer_in_progress = 0;
+    }
+
+    portion_of_pkg_data.ptr = fwup->package_data + fwup->multipart_transfer.last_transfer_handle;
+    fwup->multipart_transfer.last_transfer_handle += portion_size;
+    resp_data.next_data_transfer_handle = fwup->multipart_transfer.last_transfer_handle;
+
+    uint8_t instance_id = 1;
+    payload_length = sizeof (struct pldm_msg_hdr) + sizeof (struct get_fd_data_resp) + portion_of_pkg_data.length + 1;
+
+    request->length = payload_length;
+    request->data[0] = MCTP_BASE_PROTOCOL_MSG_TYPE_PLDM;
+    struct pldm_msg *respMsg = (struct pldm_msg *)(&request->data[1]);
+
+    status = encode_get_package_data_resp(instance_id, payload_length, respMsg, &resp_data, &portion_of_pkg_data);
+
+    fwup->completion_code = resp_data.completion_code;
 
     return status;
     
 
 }
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
