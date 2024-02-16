@@ -47,7 +47,9 @@ static void pldm_fwup_test_fd_learn_components_good_responses (CuTest *test) {
         CuAssertIntEquals(test, 0, status);
     } while (fwup->multipart_transfer.transfer_in_progress != 0);
 
-    /*
+    fwup->meta_data_size = 50;
+    fwup->meta_data = realloc_buf(fwup->meta_data, fwup->meta_data_size);
+
     fwup->multipart_transfer.last_transfer_handle = 0;
     fwup->multipart_transfer.transfer_in_progress = 0;
 
@@ -61,7 +63,7 @@ static void pldm_fwup_test_fd_learn_components_good_responses (CuTest *test) {
     
     printf("Received the following Device MetaData: \n");
     print_bytes(fwup->meta_data, (size_t)fwup->meta_data_size);
-    */
+    
 
     clean_up_and_reset_firmware_update(&mctp, fwup);
 }

@@ -219,14 +219,13 @@ int process_and_respond_get_package_data(struct cmd_interface *intf, struct cmd_
 
     fwup->completion_code = resp_data.completion_code;
 
-    print_bytes((uint8_t *)portion_of_pkg_data.ptr, portion_of_pkg_data.length);
 
     return status;
     
 
 }
 
-/*
+
 int request_get_device_meta_data(uint8_t *request, size_t *payload_length)
 {
     struct pldm_fwup_interface *fwup = get_fwup_interface();
@@ -291,7 +290,7 @@ int process_get_device_meta_data(struct cmd_interface *intf, struct cmd_interfac
     return status;
     
 }
-*/
+
 
 
 int issue_pass_component_table(uint8_t *request, size_t *payload_length)
