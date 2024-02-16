@@ -445,6 +445,15 @@ int mctp_interface_process_packet (struct mctp_interface *mctp, struct cmd_packe
 				return status;
 			}
 		}
+		else if (MCTP_BASE_PROTOCOL_IS_PLDM_MSG (mctp->msg_type)) {
+				status = mctp->cmd_mctp->process_request (mctp->cmd_mctp, &mctp->req_buffer);
+				if (status != 0) {
+					debug_log_create_entry (DEBUG_LOG_SEVERITY_ERROR, DEBUG_LOG_COMPONENT_MCTP,
+						MCTP_LOGGING_MCTP_PLDM_REQ_FAIL, status, mctp->channel_id);
+
+					return status;
+				}
+		}
 		else if (MCTP_BASE_PROTOCOL_IS_VENDOR_MSG (mctp->msg_type)) {
 			header = (struct cerberus_protocol_header*) mctp->req_buffer.data;
 			cmd_set = header->rq;

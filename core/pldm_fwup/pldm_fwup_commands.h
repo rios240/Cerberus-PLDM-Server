@@ -19,6 +19,10 @@ int process_request_update(struct cmd_interface *intf, struct cmd_interface_msg 
 
 int process_and_respond_get_package_data(struct cmd_interface *intf, struct cmd_interface_msg *request);
 
+int request_get_device_meta_data(uint8_t *request, size_t *payload_length);
+
+int process_get_device_meta_data(struct cmd_interface *intf, struct cmd_interface_msg *response);
+
 int request_pass_component_table(uint8_t *request, size_t *payload_length);
 
 int process_pass_component_table(struct cmd_interface *intf, struct cmd_interface_msg *response);

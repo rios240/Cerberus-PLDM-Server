@@ -28,6 +28,13 @@ void generate_random_data(uint8_t *data, size_t size) {
     }
 }
 
+void print_bytes(uint8_t *bytes, size_t length) {
+    for (size_t i = 0; i < length; i++) {
+        printf("%02X ", bytes[i]);
+    }
+    printf("\n");
+}
+
 
 int initialize_firmware_update(struct mctp_interface *mctp, struct cmd_channel *cmd_channel, 
                         struct cmd_interface *cmd_mctp, 
@@ -45,8 +52,8 @@ int initialize_firmware_update(struct mctp_interface *mctp, struct cmd_channel *
         return status;
     }
 
-    device_mgr->entries->eid = 0xDE;
-    device_mgr->entries->smbus_addr = 0xDE;
+    device_mgr->entries->eid = SRC_EID;
+    device_mgr->entries->smbus_addr = SRC_ADDR;
 
     status = mctp_interface_init(mctp, cmd_cerberus, cmd_mctp, cmd_spdm, device_mgr);
 
@@ -59,6 +66,9 @@ int initialize_firmware_update(struct mctp_interface *mctp, struct cmd_channel *
     fwup->package_data_size = 50;
     fwup->package_data = (uint8_t *)malloc(fwup->package_data_size * sizeof (uint8_t));
     generate_random_data(fwup->package_data, fwup->package_data_size);
+
+    fwup->meta_data_size = 0;
+    fwup->meta_data = (uint8_t *)malloc(sizeof(uint8_t));
 
     return status;
 }
@@ -90,6 +100,7 @@ int process_and_receive_pldm_over_mctp(struct mctp_interface *mctp, struct cmd_c
                                 int (*process_pldm)(struct cmd_interface *, struct cmd_interface_msg *))
 {
     mctp->cmd_mctp->process_request = process_pldm;
+    mctp->cmd_mctp->process_response = process_pldm;
     int status = cmd_channel_receive_and_process(cmd_channel, mctp, MS_TIMEOUT);
     
     return status;
@@ -107,4 +118,7 @@ void clean_up_and_reset_firmware_update(struct mctp_interface *mctp, struct pldm
 
     fwup->package_data_size = 0;
     free(fwup->package_data);
+
+    fwup->meta_data_size = 0;
+    free(fwup->meta_data);
 }

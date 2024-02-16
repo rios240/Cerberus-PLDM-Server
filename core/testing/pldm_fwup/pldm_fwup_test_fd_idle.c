@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdio.h>
 #include "testing.h"
 #include "platform_io.h"
 #include "pldm_fwup/pldm_fwup_interface.h"
