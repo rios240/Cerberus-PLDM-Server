@@ -23,10 +23,13 @@ int request_get_device_meta_data(uint8_t *request, size_t *payload_length);
 
 int process_get_device_meta_data(struct cmd_interface *intf, struct cmd_interface_msg *response);
 
-int request_pass_component_table(uint8_t *request, size_t *payload_length);
+int pass_component_table(uint8_t *request, size_t *mctp_payload_length);
 
-int process_pass_component_table(struct cmd_interface *intf, struct cmd_interface_msg *response);
+int process_pass_component_table_resp(struct cmd_interface *intf, struct cmd_interface_msg *response);
 
+int update_component(uint8_t *request, size_t *mctp_payload_length);
+
+int process_update_component_resp(struct cmd_interface *intf, struct cmd_interface_msg *response);
 
 
 

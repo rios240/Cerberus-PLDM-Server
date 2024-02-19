@@ -3,6 +3,7 @@
 
 #include "mctp/mctp_interface.h"
 #include "cmd_interface/cmd_channel.h"
+#include "firmware_update.h"
 #include "pldm_types.h"
 
 #define PLDM_MAX_PAYLOAD_LENGTH 512
@@ -19,6 +20,7 @@ struct pldm_fwup_multipart_transfer {
     bool8_t transfer_in_progress;
     uint32_t last_transfer_handle;
 };
+
 
 struct pldm_fwup_interface {
     uint8_t completion_code;
@@ -48,8 +50,6 @@ int generate_and_send_pldm_over_mctp(struct mctp_interface *mctp, struct cmd_cha
 
 int process_and_receive_pldm_over_mctp(struct mctp_interface *mctp, struct cmd_channel *cmd_channel,
                                 int (*process_pldm)(struct cmd_interface *, struct cmd_interface_msg *));
-
-int perform_firmware_update(struct mctp_interface *mctp, struct cmd_channel *cmd_channel);
 
 void clean_up_and_reset_firmware_update(struct mctp_interface *mctp, struct pldm_fwup_interface *fwup);
 

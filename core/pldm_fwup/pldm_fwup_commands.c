@@ -76,7 +76,7 @@ int process_get_firmware_parameters(struct cmd_interface *intf, struct cmd_inter
     int status = decode_get_firmware_parameters_comp_img_set_resp(respMsg, payload_length, &resp_data,
                                                         &active_comp_image_set_ver_str, &pending_comp_image_set_ver_str);
     
-    struct component_parameter_table comp_parameter_table;
+    struct component_parameter_table_entry comp_parameter_table_entry;
     struct variable_field active_comp_ver_str;
     struct variable_field pending_comp_ver_str;
 
@@ -85,7 +85,7 @@ int process_get_firmware_parameters(struct cmd_interface *intf, struct cmd_inter
     const size_t comp_parameter_table_length = response->length - sizeof (struct get_firmware_parameters_resp) - active_comp_image_set_ver_str.length
                                             - pending_comp_image_set_ver_str.length - 1;
 
-    status = decode_get_firmware_parameters_comp_resp(comp_parameter_table_data, comp_parameter_table_length, &comp_parameter_table, 
+    status = decode_get_firmware_parameters_comp_resp(comp_parameter_table_data, comp_parameter_table_length, &comp_parameter_table_entry, 
                                                 &active_comp_ver_str, &pending_comp_ver_str);
     
     response->length = 0;
@@ -293,14 +293,14 @@ int process_get_device_meta_data(struct cmd_interface *intf, struct cmd_interfac
 
 
 
-int issue_pass_component_table(uint8_t *request, size_t *payload_length)
+int pass_component_table(uint8_t *request, size_t *mctp_payload_length)
 {
     uint8_t instance_id = 1;
 
     const char *comp_ver_str_arr = "BIOS_v2.0";
 
     struct pass_component_table_req req_data;
-    req_data.transfer_flag = 0x5;
+    req_data.transfer_flag = PLDM_START_AND_END;
     req_data.comp_classification = COMP_FIRMWARE_OR_BIOS;
     req_data.comp_identifier = 0xDEAD;
     req_data.comp_classification_index = 0xDE;
@@ -312,7 +312,7 @@ int issue_pass_component_table(uint8_t *request, size_t *payload_length)
     comp_ver_str.ptr = (const uint8_t *)comp_ver_str_arr;
     comp_ver_str.length = req_data.comp_ver_str_len;
 
-    *payload_length = sizeof (struct pldm_msg_hdr)
+    *mctp_payload_length = sizeof (struct pldm_msg_hdr)
                     + sizeof (struct pass_component_table_req)
                     + comp_ver_str.length
                     + 1;
@@ -328,8 +328,9 @@ int issue_pass_component_table(uint8_t *request, size_t *payload_length)
 }
 
 
-int process_pass_component_table(struct cmd_interface *intf, struct cmd_interface_msg *response)
+int process_pass_component_table_resp(struct cmd_interface *intf, struct cmd_interface_msg *response)
 {
+    struct pldm_fwup_interface *fwup = get_fwup_interface();
     struct pldm_msg *respMsg = (struct pldm_msg *)(&response->data[1]);
 
     uint8_t completion_code;
@@ -338,8 +339,77 @@ int process_pass_component_table(struct cmd_interface *intf, struct cmd_interfac
 
     const size_t payload_length = response->length - sizeof (struct pldm_msg_hdr) - 1;
     int status = decode_pass_component_table_resp(respMsg, payload_length, &completion_code, &comp_resp, &comp_resp_code);
+    if (status == DECODE_SUCCESS) {
+        response->length = 0;
+        fwup->completion_code = completion_code;
+        return 0;
+    }
 
     response->length = 0;
+    fwup->completion_code = completion_code;
+    return status;
+}
 
+
+int update_component(uint8_t *request, size_t *mctp_payload_length)
+{
+    uint8_t instance_id = 1;
+
+    const char *comp_ver_str_arr = "BIOS_v2.0";
+
+    struct update_component_req req_data;
+    req_data.comp_classification = COMP_FIRMWARE_OR_BIOS;
+    req_data.comp_classification_index = 0xDE;
+    req_data.comp_comparison_stamp = 0xDEADBEEF;
+    req_data.comp_identifier = 0xDEAD;
+    req_data.comp_image_size = 50;
+    req_data.comp_ver_str_len = strlen(comp_ver_str_arr);
+    req_data.comp_ver_str_type = PLDM_COMP_ASCII;
+    req_data.update_option_flags.value = 0;
+    req_data.update_option_flags.bits.bit0 = 1;
+
+    struct variable_field comp_ver_str;
+    comp_ver_str.ptr = (const uint8_t *)comp_ver_str_arr;
+    comp_ver_str.length = req_data.comp_ver_str_len;
+
+    *mctp_payload_length = sizeof (struct pldm_msg_hdr)
+                    + sizeof (struct update_component_req)
+                    + comp_ver_str.length
+                    + 1;
+
+    const size_t pldm_payload_length = sizeof (struct update_component_req) + comp_ver_str.length;
+
+    request[0] = MCTP_BASE_PROTOCOL_MSG_TYPE_PLDM;
+    struct pldm_msg *reqMsg = (struct pldm_msg *)(request + 1);
+
+    int status = encode_update_component_req(instance_id, reqMsg, pldm_payload_length, &req_data, &comp_ver_str);
+
+    return status;
+
+}
+
+int process_update_component_resp(struct cmd_interface *intf, struct cmd_interface_msg *response)
+{
+    struct pldm_fwup_interface *fwup = get_fwup_interface();
+    struct pldm_msg *respMsg = (struct pldm_msg *)(&response->data[1]);
+
+    uint8_t completion_code;
+	uint8_t comp_compatability_resp;
+	uint8_t comp_compatability_resp_code;
+	bitfield32_t update_option_flags_enabled;
+	uint16_t estimated_time_req_fd;
+
+    const size_t payload_length = response->length - sizeof (struct pldm_msg_hdr) - 1;
+    int status = decode_update_component_resp(respMsg, payload_length, &completion_code, &comp_compatability_resp,
+                                    &comp_compatability_resp_code, &update_option_flags_enabled, &estimated_time_req_fd);
+
+    if (status == DECODE_SUCCESS) {
+        response->length = 0;
+        fwup->completion_code = completion_code;
+        return 0;
+    }
+
+    response->length = 0;
+    fwup->completion_code = completion_code;
     return status;
 }
