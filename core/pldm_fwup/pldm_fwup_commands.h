@@ -31,6 +31,7 @@ int update_component(uint8_t *request, size_t *mctp_payload_length);
 
 int process_update_component_resp(struct cmd_interface *intf, struct cmd_interface_msg *response);
 
+int process_and_respond_request_firmware_data(struct cmd_interface *intf, struct cmd_interface_msg *request);
 
 
 #endif /* PLDM_FWUP_COMMANDS_H_ */

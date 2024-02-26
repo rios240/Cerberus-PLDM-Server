@@ -30,6 +30,8 @@ struct pldm_fwup_interface {
     uint8_t *package_data;
     uint32_t meta_data_size;
     uint8_t *meta_data;
+    uint32_t comp_image_size;
+    uint8_t *comp_image;
 
 };
 
@@ -44,6 +46,8 @@ int initialize_firmware_update(struct mctp_interface *mctp, struct cmd_channel *
 uint8_t *realloc_buf(uint8_t *ptr, size_t length);
 
 void print_bytes(uint8_t *bytes, size_t length);
+
+void generate_random_data(uint8_t *data, size_t size);
 
 int generate_and_send_pldm_over_mctp(struct mctp_interface *mctp, struct cmd_channel *cmd_channel, 
                                 int (*generate_pldm)(uint8_t *, size_t *));

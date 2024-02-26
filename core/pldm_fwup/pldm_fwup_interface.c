@@ -70,6 +70,10 @@ int initialize_firmware_update(struct mctp_interface *mctp, struct cmd_channel *
     fwup->meta_data_size = 0;
     fwup->meta_data = (uint8_t *)malloc(sizeof(uint8_t));
 
+    fwup->comp_image_size = 160;
+    fwup->comp_image = (uint8_t *)malloc(fwup->comp_image_size * sizeof (uint8_t));
+    generate_random_data(fwup->comp_image, fwup->comp_image_size);
+
     return status;
 }
 
@@ -121,4 +125,7 @@ void clean_up_and_reset_firmware_update(struct mctp_interface *mctp, struct pldm
 
     fwup->meta_data_size = 0;
     free(fwup->meta_data);
+
+    fwup->comp_image_size = 0;
+    free(fwup->comp_image);
 }

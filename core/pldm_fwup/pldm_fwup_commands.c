@@ -7,6 +7,7 @@
 #include "firmware_update.h"
 #include "pldm_fwup_interface.h"
 
+static uint32_t maximum_transfer_size = 512;
 
 int request_query_device_identifiers(uint8_t *request, size_t *payload_length)
 {
@@ -105,7 +106,7 @@ int request_update(uint8_t *request, size_t *payload_length)
     const char* comp_image_set_ver_str_arr = "cerberus_v2.0";
 
     struct request_update_req req_data;
-    req_data.max_transfer_size = 60;
+    req_data.max_transfer_size = maximum_transfer_size;
     req_data.no_of_comp = 1;
     req_data.max_outstand_transfer_req = 1;
     req_data.pkg_data_len = fwup->package_data_size;
@@ -413,3 +414,47 @@ int process_update_component_resp(struct cmd_interface *intf, struct cmd_interfa
     fwup->completion_code = completion_code;
     return status;
 }
+
+
+int process_and_respond_request_firmware_data(struct cmd_interface *intf, struct cmd_interface_msg *request)
+{
+    struct pldm_fwup_interface *fwup = get_fwup_interface();
+
+    const size_t payload_length = request->length - sizeof (struct pldm_msg_hdr) - 1;
+    struct pldm_msg *reqMsg = (struct pldm_msg *)(&request->data[1]);
+
+    uint32_t offset;
+    uint32_t length;
+
+    int status = decode_request_firmware_data_req(reqMsg, payload_length, &offset, &length);
+
+    uint8_t instance_id = 1;
+
+    uint8_t completion_code;
+
+    if (length > maximum_transfer_size || length < PLDM_FWU_BASELINE_TRANSFER_SIZE) {
+        completion_code = INVALID_TRANSFER_LENGTH;
+    } else if (offset > fwup->comp_image_size) {
+        completion_code = DATA_OUT_OF_RANGE;
+    } else {
+        completion_code = PLDM_SUCCESS;
+    }
+    struct variable_field component_image_portion;
+    component_image_portion.ptr = fwup->comp_image + offset;
+    component_image_portion.length = length;
+
+    const size_t mctp_payload_length = sizeof (struct pldm_msg_hdr);
+    const size_t pldm_payload_length = length + 1;
+
+    request->length = mctp_payload_length;
+    request->data[0] = MCTP_BASE_PROTOCOL_MSG_TYPE_PLDM;
+    struct pldm_msg *respMsg = (struct pldm_msg *)(&request->data[1]);
+
+    status = encode_request_firmware_data_resp(instance_id, respMsg, pldm_payload_length, completion_code, &component_image_portion);
+
+    fwup->completion_code = completion_code;
+
+    return status;
+
+}
+
